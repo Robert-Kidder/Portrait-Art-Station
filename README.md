@@ -1,2 +1,36 @@
-# Portrait-Art-Station
-一个基于Streamlit和 PyTorch的Web应用程序，实现了基于语义感知的图像风格迁移。项目创新性地引入了MediaPipe进行人像分割，允许用户在“全局风格化”和“人像保护模式”之间切换，解决了传统风格迁移中人脸细节丢失的问题。
+# 🎨 Portrait Art Station | 语义感知风格迁移系统
+
+![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
+![Streamlit](https://img.shields.io/badge/Streamlit-App-ff4b4b)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-ee4c2c)
+![MediaPipe](https://img.shields.io/badge/MediaPipe-Segmentation-00997f)
+
+## 📖 项目简介 (Introduction)
+
+本项目是图像处理课程的综合大作业。它是一个基于 Web 的图像风格迁移应用，能够将上传的照片转换为特定的艺术风格（如梵高、莫奈等）。
+
+**核心创新点：**
+传统的风格迁移算法（如 Fast Neural Style Transfer）通常会对整张图像进行处理，导致人脸纹理崩坏。本项目引入了 **语义分割 (Semantic Segmentation)** 技术，开发了 **"人像保护模式" (Portrait Mode)**。系统能自动识别前景人物，仅对背景进行艺术化处理，从而在保留人物真实质感的同时赋予照片艺术气息。
+
+## ✨ 功能特性 (Features)
+
+*   **多风格选择：** 内置马赛克 (Mosaic)、糖果 (Candy)、雨之公主 (Rain Princess)、乌德尼 (Udnie) 等多种经典艺术风格。
+*   **🛡️ 人像保护模式：** 利用 MediaPipe 进行实时人像分割，实现背景风格化、前景保留。
+*   **Web 交互界面：** 基于 Streamlit 开发，界面美观，支持移动端适配。
+*   **极速推理：** 使用 PyTorch 的 Fast Neural Style 模型，在 CPU 上也能实现秒级生成。
+*   **边缘融合优化：** 引入高斯模糊羽化技术，使人像与风格化背景的过渡更加自然。
+
+## 📂 文件结构 (File Structure)
+
+```text
+Semantic-Style-Transfer-Web/
+├── app.py                  # Streamlit Web 应用主程序
+├── style_transfer_utils.py # 核心算法库 (模型加载、推理、图像融合)
+├── mosaic.jpg              # 首页预览示例图片
+├── requirements.txt        # 项目依赖库列表
+├── README.md               # 项目说明文档
+└── saved_models/           # 预训练模型文件夹 (.pth)
+    ├── mosaic.pth
+    ├── candy.pth
+    ├── rain_princess.pth
+    └── udnie.pth
