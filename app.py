@@ -39,7 +39,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 核心辅助函数 (究极增强版)
+# 2. 核心辅助函数 (匿名化处理长文件名)
 # ==========================================
 
 MAX_IMAGE_SIZE = 1000
@@ -47,64 +47,61 @@ MAX_IMAGE_SIZE = 1000
 def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
     """
     安全加载并缩放图片。
-    针对无扩展名的长文件名、WebP、HEIC、截断图片进行了全面防御。
+    通过创建全新、短命名的 BytesIO 流，彻底解决长文件名导致的报错。
     """
     try:
-        # 1. 基础检查
         if image_file is None: return None
+        
+        # 1. 读取原始数据的二进制流
         image_file.seek(0)
         file_bytes = image_file.read()
+        
         if len(file_bytes) == 0:
-            st.error("⚠️ 错误：上传的文件大小为 0，请重新上传。")
+            st.error("⚠️ 错误：上传的文件内容为空。")
             return None
             
-        # 2. 准备 BytesIO 流
-        image_stream = io.BytesIO(file_bytes)
+        # 2. 创建一个新的、干净的内存流
+        # 这一步切断了与原始 UploadedFile (及其长文件名) 的联系
+        clean_stream = io.BytesIO(file_bytes)
         
-        # 3. 尝试打开图片 (多策略尝试)
+        # 3. 【关键步骤】强制赋予一个短的、安全的假名字
+        # 无论原图叫什么，PIL 现在只认为它叫 "temp.jpg"
+        clean_stream.name = "temp.jpg"
+        
+        # 4. 尝试打开
         image = None
-        error_msg = ""
-        
-        # 策略 A: 让 PIL 自动嗅探 (不设置 name，纯靠字节头)
         try:
-            image_stream.seek(0)
-            image_stream.name = "" # 清空名字，防止干扰
-            image = Image.open(image_stream)
-            image.load() # 强制读取数据
+            image = Image.open(clean_stream)
+            image.load() # 立即解码，测试文件完整性
         except Exception:
-            # 策略 B: 强制伪装成 JPG (应对无后缀的 JPG)
+            # 如果当做 JPG 失败，尝试当做 PNG
+            clean_stream.seek(0)
+            clean_stream.name = "temp.png"
             try:
-                image_stream.seek(0)
-                image_stream.name = "force_detect.jpg"
-                image = Image.open(image_stream)
+                image = Image.open(clean_stream)
                 image.load()
             except Exception:
-                # 策略 C: 强制伪装成 PNG
+                # 最后的尝试：不设名字，让 PIL 盲猜
+                clean_stream.seek(0)
+                clean_stream.name = None 
                 try:
-                    image_stream.seek(0)
-                    image_stream.name = "force_detect.png"
-                    image = Image.open(image_stream)
+                    image = Image.open(clean_stream)
                     image.load()
                 except Exception as e:
-                    error_msg = str(e)
-                    image = None
+                    st.error(f"⚠️ 无法解析图片数据。请尝试截图后上传，或转换格式。")
+                    return None
 
-        # 4. 如果所有策略都失败
-        if image is None:
-            st.error(f"⚠️ 无法识别图片格式。请注意：\n1. 本系统暂不支持 HEIC (iPhone) 格式，请在手机相册设置中改为“兼容性最佳”或截图上传。\n2. 原始报错: {error_msg}")
-            return None
-        
-        # 5. 修复手机拍摄图片的旋转问题 (EXIF Orientation)
+        # 5. 修复旋转 (手机照片常见问题)
         try:
             image = ImageOps.exif_transpose(image)
         except Exception:
             pass 
         
-        # 6. 强制转换为 RGB (去除 Alpha 通道，防止 RGBA 报错)
+        # 6. 统一转为 RGB (去除 Alpha 通道)
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # 7. 计算缩放比例 (防止内存溢出)
+        # 7. 缩放限制内存
         w, h = image.size
         if max(w, h) > max_size:
             scale = max_size / max(w, h)
@@ -115,7 +112,7 @@ def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
         return image
 
     except Exception as e:
-        st.error(f"处理图片时发生未知错误: {e}")
+        st.error(f"处理图片时发生系统错误: {e}")
         return None
 
 # ==========================================
@@ -135,7 +132,6 @@ def load_model(model_path):
     model = TransformerNet()
     try:
         state_dict = torch.load(model_path, map_location=device)
-        # 移除多余的 keys
         for key in list(state_dict.keys()):
             if 'running_mean' in key or 'running_var' in key:
                 del state_dict[key]
@@ -177,8 +173,8 @@ st.sidebar.markdown("上传图片并选择你喜欢的艺术风格。")
 
 uploaded_file = st.sidebar.file_uploader(
     "1️⃣ 上传一张照片...", 
-    type=["jpg", "jpeg", "png", "webp"], # 显式允许 webp
-    help="支持 JPG, PNG, WEBP。大图将自动优化。"
+    type=["jpg", "jpeg", "png", "webp"], 
+    help="建议上传包含人物的自拍或生活照，以体验人像保护功能。"
 )
 
 selected_style_name = st.sidebar.selectbox("2️⃣ 选择艺术风格", list(STYLE_MODELS.keys()))
@@ -221,10 +217,10 @@ if uploaded_file is None:
         st.caption("无论手机还是电脑，随时随地开启创作。")
 
 else:
-    # 加载图片
+    # 核心修改：先安全加载图片
     content_image = load_and_resize_image(uploaded_file)
     
-    # 只有当图片成功加载时才继续
+    # 只有当 content_image 成功变为 PIL 对象后，才渲染界面
     if content_image is not None:
         col_input, col_output = st.columns(2)
         with col_input:
