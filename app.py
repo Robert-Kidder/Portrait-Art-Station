@@ -33,25 +33,32 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 核心辅助函数 (新增：缩放与安全加载)
+# 2. 核心辅助函数 (关键修复)
 # ==========================================
 
-# 🔴 关键修改：限制图片最大尺寸，防止内存溢出
-MAX_IMAGE_SIZE = 1000  # 设置最长边为 1000 像素，平衡速度与画质
+MAX_IMAGE_SIZE = 1000
 
 def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
     """
     安全加载并缩放图片。
-    1. 解决 Image.open 的并发报错 (通过 .copy())
-    2. 解决大文件导致的内存崩溃 (通过 resize)
+    修复了 'cannot identify image file' 错误。
     """
     try:
-        image = Image.open(image_file)
+        # 🔴 关键修复步骤 1: 重置文件指针到开头
+        image_file.seek(0)
+        
+        # 🔴 关键修复步骤 2: 读取字节流并封装到 BytesIO
+        # 这能确保 PIL 接收到的是完整的二进制流，而不是 Streamlit 的封装对象
+        file_bytes = image_file.read()
+        image_stream = io.BytesIO(file_bytes)
+        
+        # 打开图片
+        image = Image.open(image_stream)
         
         # 修复手机上传图片可能出现的旋转问题 (EXIF Orientation)
         image = ImageOps.exif_transpose(image)
         
-        # 强制转换为 RGB，防止 RGBA 或 CMYK 导致后续报错
+        # 强制转换为 RGB
         image = image.convert('RGB')
         
         # 计算缩放比例
@@ -64,7 +71,8 @@ def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
         
         return image
     except Exception as e:
-        st.error(f"图片加载失败: {e}")
+        # 打印更详细的错误信息以便调试
+        st.error(f"图片加载失败: {str(e)}")
         return None
 
 # ==========================================
@@ -111,7 +119,6 @@ def global_style_transfer(content_img, model_path):
     output_tensor = output_tensor.cpu().squeeze(0).clamp(0, 255).numpy()
     output_tensor = output_tensor.transpose(1, 2, 0).astype("uint8")
     
-    # 🔴 显式清理显存/内存
     del content_tensor
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
@@ -127,7 +134,7 @@ st.sidebar.markdown("上传图片并选择你喜欢的艺术风格。")
 uploaded_file = st.sidebar.file_uploader(
     "1️⃣ 上传一张照片...", 
     type=["jpg", "jpeg", "png"],
-    help="建议上传包含人物的自拍或生活照，以体验人像保护功能。大图将自动压缩至 1000px。"
+    help="为防止内存溢出，大图将自动压缩至 1000px。"
 )
 
 selected_style_name = st.sidebar.selectbox("2️⃣ 选择艺术风格", list(STYLE_MODELS.keys()))
@@ -170,9 +177,10 @@ if uploaded_file is None:
         st.caption("无论手机还是电脑，随时随地开启创作。")
 
 else:
-    # 🔴 使用新的安全加载函数
+    # 使用修复后的加载函数
     content_image = load_and_resize_image(uploaded_file)
     
+    # 只有当图片成功加载时才继续
     if content_image is not None:
         col_input, col_output = st.columns(2)
         with col_input:
@@ -215,7 +223,6 @@ else:
                             use_container_width=True
                         )
                         
-                        # 🔴 运行结束后清理内存
                         gc.collect()
                         
                     except Exception as e:
