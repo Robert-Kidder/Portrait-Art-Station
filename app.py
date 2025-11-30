@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 import torch
 import torchvision.transforms as transforms
 import os
@@ -33,7 +33,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. 核心辅助函数 (关键修复)
+# 2. 核心辅助函数 (关键修复：文件名清洗)
 # ==========================================
 
 MAX_IMAGE_SIZE = 1000
@@ -41,27 +41,47 @@ MAX_IMAGE_SIZE = 1000
 def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
     """
     安全加载并缩放图片。
-    修复了 'cannot identify image file' 错误。
+    修复：长文件名、手机特殊格式、空文件流。
     """
     try:
-        # 🔴 关键修复步骤 1: 重置文件指针到开头
+        # 1. 重置文件指针
         image_file.seek(0)
         
-        # 🔴 关键修复步骤 2: 读取字节流并封装到 BytesIO
-        # 这能确保 PIL 接收到的是完整的二进制流，而不是 Streamlit 的封装对象
+        # 2. 读取字节流
         file_bytes = image_file.read()
+        
+        # 3. 检查文件大小
+        if len(file_bytes) == 0:
+            st.error("⚠️ 上传的图片文件为空，请重新选择。")
+            return None
+            
+        # 4. 创建 BytesIO 对象
         image_stream = io.BytesIO(file_bytes)
         
-        # 打开图片
-        image = Image.open(image_stream)
+        # 🟢 关键修复：给内存流指定一个安全的“假名字”
+        # 这能防止 PIL 被原始的长文件名或缺失的后缀误导
+        image_stream.name = "safe_upload_temp.jpg" 
         
-        # 修复手机上传图片可能出现的旋转问题 (EXIF Orientation)
-        image = ImageOps.exif_transpose(image)
+        # 5. 尝试打开图片
+        try:
+            image = Image.open(image_stream)
+            # 强制加载数据以验证完整性
+            image.load()
+        except UnidentifiedImageError:
+            st.error("⚠️ 无法识别图片格式。可能是 HEIC 格式或文件损坏，请使用标准 JPG/PNG。")
+            return None
         
-        # 强制转换为 RGB
-        image = image.convert('RGB')
+        # 6. 修复手机拍摄图片的旋转问题 (EXIF Orientation)
+        try:
+            image = ImageOps.exif_transpose(image)
+        except Exception:
+            pass 
         
-        # 计算缩放比例
+        # 7. 强制转换为 RGB
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # 8. 计算缩放比例
         w, h = image.size
         if max(w, h) > max_size:
             scale = max_size / max(w, h)
@@ -70,9 +90,9 @@ def load_and_resize_image(image_file, max_size=MAX_IMAGE_SIZE):
             image = image.resize((new_w, new_h), Image.Resampling.LANCZOS)
         
         return image
+
     except Exception as e:
-        # 打印更详细的错误信息以便调试
-        st.error(f"图片加载失败: {str(e)}")
+        st.error(f"处理图片时发生未知错误: {e}")
         return None
 
 # ==========================================
@@ -134,7 +154,7 @@ st.sidebar.markdown("上传图片并选择你喜欢的艺术风格。")
 uploaded_file = st.sidebar.file_uploader(
     "1️⃣ 上传一张照片...", 
     type=["jpg", "jpeg", "png"],
-    help="为防止内存溢出，大图将自动压缩至 1000px。"
+    help="支持 JPG, PNG 格式。大图将自动优化。"
 )
 
 selected_style_name = st.sidebar.selectbox("2️⃣ 选择艺术风格", list(STYLE_MODELS.keys()))
@@ -177,10 +197,9 @@ if uploaded_file is None:
         st.caption("无论手机还是电脑，随时随地开启创作。")
 
 else:
-    # 使用修复后的加载函数
+    # 加载图片
     content_image = load_and_resize_image(uploaded_file)
     
-    # 只有当图片成功加载时才继续
     if content_image is not None:
         col_input, col_output = st.columns(2)
         with col_input:
@@ -218,7 +237,7 @@ else:
                         output_image.save(buf, format="JPEG", quality=95)
                         byte_im = buf.getvalue()
                         st.download_button(
-                            label="📥 保存高清大图", data=byte_im,
+                            label="📥 保存高清图片", data=byte_im,
                             file_name="art_style_result.jpg", mime="image/jpeg",
                             use_container_width=True
                         )
