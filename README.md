@@ -1,4 +1,4 @@
-# 🎨 Portrait Art Station | 语义感知风格迁移系统
+# 🎨 Semantic Style Transfer Web App | 语义感知风格迁移系统
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-ff4b4b)
@@ -34,3 +34,46 @@ Semantic-Style-Transfer-Web/
     ├── candy.pth
     ├── rain_princess.pth
     └── udnie.pth
+```
+
+## 🚀 快速开始 (Quick Start)
+
+### 1. 克隆项目
+```bash
+https://github.com/Robert-Kidder/Portrait-Art-Station.git
+cd Portrait-Art-Station
+```
+
+### 2. 安装依赖
+建议使用 Python 3.8 - 3.11 环境。
+```bash
+pip install -r requirements.txt
+```
+
+### 3. 准备模型文件
+确保 `saved_models` 文件夹下包含 `.pth` 模型文件。
+*   本项目使用 PyTorch 官方示例提供的预训练模型。
+*   如果缺少模型，请前往 [PyTorch Examples GitHub](https://github.com/pytorch/examples/tree/main/fast_neural_style/models) 下载。
+
+### 4. 运行应用
+```bash
+streamlit run app.py
+```
+运行后，浏览器将自动打开 `http://localhost:8501`。
+
+## 🖼️ 效果展示 (Demo)
+
+<img width="278" height="383" alt="周杰伦" src="https://github.com/user-attachments/assets/70e9a806-25f6-418b-92cf-acc538d3c756" />
+<img width="278" height="383" alt="result" src="https://github.com/user-attachments/assets/28a2e85a-e0e4-4062-9cee-54bef172aacd" />
+
+## 🛠️ 技术栈 (Tech Stack)
+
+*   **前端框架：** Streamlit
+*   **深度学习框架：** PyTorch
+*   **图像处理：** OpenCV, PIL (Pillow), Numpy
+*   **人像分割：** MediaPipe
+
+## 📜 许可证 (License)
+
+本项目仅用于学术交流与课程作业展示。
+Style Transfer 模型源码参考自 [PyTorch Examples](https://github.com/pytorch/examples/tree/main/fast_neural_style).
