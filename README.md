@@ -1,18 +1,18 @@
-# 🎨 Semantic Style Transfer Web App | 语义感知风格迁移系统
+# 🎨 语义感知风格迁移系统
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-App-ff4b4b)
 ![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-ee4c2c)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-Segmentation-00997f)
 
-## 📖 项目简介 (Introduction)
+## 📖 项目简介
 
 本项目是图像处理课程的综合大作业。它是一个基于 Web 的图像风格迁移应用，能够将上传的照片转换为特定的艺术风格（如梵高、莫奈等）。
 
 **核心创新点：**
 传统的风格迁移算法（如 Fast Neural Style Transfer）通常会对整张图像进行处理，导致人脸纹理崩坏。本项目引入了 **语义分割 (Semantic Segmentation)** 技术，开发了 **"人像保护模式" (Portrait Mode)**。系统能自动识别前景人物，仅对背景进行艺术化处理，从而在保留人物真实质感的同时赋予照片艺术气息。
 
-## ✨ 功能特性 (Features)
+## ✨ 功能特性
 
 *   **多风格选择：** 内置马赛克 (Mosaic)、糖果 (Candy)、雨之公主 (Rain Princess)、乌德尼 (Udnie) 等多种经典艺术风格。
 *   **🛡️ 人像保护模式：** 利用 MediaPipe 进行实时人像分割，实现背景风格化、前景保留。
@@ -20,7 +20,7 @@
 *   **极速推理：** 使用 PyTorch 的 Fast Neural Style 模型，在 CPU 上也能实现秒级生成。
 *   **边缘融合优化：** 引入高斯模糊羽化技术，使人像与风格化背景的过渡更加自然。
 
-## 📂 文件结构 (File Structure)
+## 📂 文件结构
 
 ```text
 Semantic-Style-Transfer-Web/
@@ -36,7 +36,7 @@ Semantic-Style-Transfer-Web/
     └── udnie.pth
 ```
 
-## 🚀 快速开始 (Quick Start)
+## 🚀 快速开始
 
 ### 1. 克隆项目
 ```bash
@@ -61,19 +61,19 @@ streamlit run app.py
 ```
 运行后，浏览器将自动打开 `http://localhost:8501`。
 
-## 🖼️ 效果展示 (Demo)
+## 🖼️ 效果展示
 
 <img width="278" height="383" alt="周杰伦" src="https://github.com/user-attachments/assets/70e9a806-25f6-418b-92cf-acc538d3c756" />
 <img width="278" height="383" alt="result" src="https://github.com/user-attachments/assets/28a2e85a-e0e4-4062-9cee-54bef172aacd" />
 
-## 🛠️ 技术栈 (Tech Stack)
+## 🛠️ 技术栈
 
 *   **前端框架：** Streamlit
 *   **深度学习框架：** PyTorch
 *   **图像处理：** OpenCV, PIL (Pillow), Numpy
 *   **人像分割：** MediaPipe
 
-## 📜 许可证 (License)
+## 📜 许可证
 
 本项目仅用于学术交流与课程作业展示。
 Style Transfer 模型源码参考自 [PyTorch Examples](https://github.com/pytorch/examples/tree/main/fast_neural_style).
