@@ -198,7 +198,7 @@ if uploaded_file is None:
     with col_img:
         local_image_path = "mosaic.jpg"
         if os.path.exists(local_image_path):
-            st.image(Image.open(local_image_path), caption="效果预览：马赛克风格", width='stretch)
+            st.image(Image.open(local_image_path), caption="效果预览：马赛克风格", width='stretch')
         else:
             st.warning(f"⚠️ 提示：未在当前目录下找到 '{local_image_path}'。")
     
@@ -223,7 +223,7 @@ else:
         col_input, col_output = st.columns(2)
         with col_input:
             st.markdown("##### 📸 原始图像")
-            st.image(content_image, width='stretch)
+            st.image(content_image, width='stretch')
 
         if generate_btn:
             model_path = STYLE_MODELS[selected_style_name]
@@ -258,7 +258,7 @@ else:
                             progress_bar.progress(100)
                             progress_bar.empty()
                             status_box.success("✨ 生成成功！")
-                            st.image(output_image, width='stretch)
+                            st.image(output_image, width='stretch')
                             
                             buf = io.BytesIO()
                             output_image.save(buf, format="JPEG", quality=95)
@@ -266,7 +266,7 @@ else:
                             st.download_button(
                                 label="📥 保存高清图片", data=byte_im,
                                 file_name="art_style_result.jpg", mime="image/jpeg",
-                                width='stretch
+                                width='stretch'
                             )
                             
                             # 立即回收内存
